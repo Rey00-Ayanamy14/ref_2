@@ -1,9 +1,9 @@
 using CourierManagementSystem.Api.Constants;
 using CourierManagementSystem.Api.Models.DTOs.Requests;
+using CourierManagementSystem.Api.Models.DTOs.Responses;
 using CourierManagementSystem.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.IdentityModel.Tokens.Jwt;
 
 namespace CourierManagementSystem.Api.Controllers;
 
@@ -12,34 +12,34 @@ namespace CourierManagementSystem.Api.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly ICurrentUserService _currentUserService;
 
-    public AuthController(IAuthService authService)
+    public AuthController(
+        IAuthService authService,
+        ICurrentUserService currentUserService)
     {
-        _authService = authService;
+        _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+        _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
     }
 
     [HttpPost(ApiConstants.LoginEndpoint)]
     [AllowAnonymous]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
+        if (request == null)
+        {
+            return BadRequest("Request cannot be null");
+        }
+
         var response = await _authService.LoginAsync(request);
         return Ok(response);
     }
 
     [HttpGet(ApiConstants.CurrentUserEndpoint)]
-    [AllowAnonymous]
+    [AllowAnonymous] 
     public IActionResult GetCurrentUser()
     {
-        var userId = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        var login = User.FindFirst(JwtRegisteredClaimNames.UniqueName)?.Value;
-        var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
-
-        return Ok(new
-        {
-            userId,
-            login,
-            role,
-            isAuthenticated = User.Identity?.IsAuthenticated ?? false
-        });
+        var userInfo = _currentUserService.GetCurrentUserInfo();
+        return Ok(userInfo);
     }
 }
