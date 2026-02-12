@@ -9,25 +9,25 @@ namespace CourierManagementSystem.Api.Controllers;
 
 [ApiController]
 [Route(ApiConstants.DeliveriesRoutePrefix)]
-[Authorize] 
+[Authorize]
 public class DeliveriesController : ControllerBase
 {
     private readonly IDeliveryService _deliveryService;
+    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<DeliveriesController> _logger;
 
     public DeliveriesController(
         IDeliveryService deliveryService,
+        ICurrentUserService currentUserService,
         ILogger<DeliveriesController> logger)
     {
         _deliveryService = deliveryService ?? throw new ArgumentNullException(nameof(deliveryService));
+        _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     [HttpGet]
     [Authorize(Policy = ApiConstants.ManagerOrAdminPolicy)]
-    [ProducesResponseType(typeof(IEnumerable<DeliveryDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetAllDeliveries(
         [FromQuery] DateOnly? date,
         [FromQuery] long? courierId,
@@ -42,11 +42,6 @@ public class DeliveriesController : ControllerBase
 
     [HttpGet("{" + ApiConstants.DeliveryIdParameter + "}")]
     [Authorize(Policy = ApiConstants.ManagerOrAdminPolicy)]
-    [ProducesResponseType(typeof(DeliveryDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetDeliveryById(long id)
     {
         if (id <= 0)
@@ -66,10 +61,6 @@ public class DeliveriesController : ControllerBase
 
     [HttpPost]
     [Authorize(Policy = ApiConstants.ManagerOrAdminPolicy)]
-    [ProducesResponseType(typeof(DeliveryDto), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> CreateDelivery([FromBody] DeliveryRequest request)
     {
         if (request == null)
@@ -82,8 +73,7 @@ public class DeliveriesController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        if (userIdClaim == null || !long.TryParse(userIdClaim, out var userId))
+        if (!_currentUserService.TryGetCurrentUserId(out var userId))
         {
             _logger.LogWarning("Failed to extract user ID from token");
             return Unauthorized();
@@ -101,11 +91,6 @@ public class DeliveriesController : ControllerBase
 
     [HttpPut("{" + ApiConstants.DeliveryIdParameter + "}")]
     [Authorize(Policy = ApiConstants.ManagerOrAdminPolicy)]
-    [ProducesResponseType(typeof(DeliveryDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> UpdateDelivery(long id, [FromBody] DeliveryRequest request)
     {
         if (id <= 0)
@@ -136,11 +121,6 @@ public class DeliveriesController : ControllerBase
 
     [HttpDelete("{" + ApiConstants.DeliveryIdParameter + "}")]
     [Authorize(Policy = ApiConstants.ManagerOrAdminPolicy)]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> DeleteDelivery(long id)
     {
         if (id <= 0)
@@ -161,10 +141,6 @@ public class DeliveriesController : ControllerBase
 
     [HttpPost(ApiConstants.GenerateDeliveriesEndpoint)]
     [Authorize(Policy = ApiConstants.ManagerOrAdminPolicy)]
-    [ProducesResponseType(typeof(GenerateDeliveriesResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GenerateDeliveries([FromBody] GenerateDeliveriesRequest request)
     {
         if (request == null)
@@ -177,8 +153,7 @@ public class DeliveriesController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        if (userIdClaim == null || !long.TryParse(userIdClaim, out var userId))
+        if (!_currentUserService.TryGetCurrentUserId(out var userId))
         {
             _logger.LogWarning("Failed to extract user ID from token");
             return Unauthorized();
