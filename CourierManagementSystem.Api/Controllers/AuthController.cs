@@ -36,7 +36,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpGet(ApiConstants.CurrentUserEndpoint)]
-    [AllowAnonymous] 
+    [Authorize]
     public IActionResult GetCurrentUser()
     {
         var userInfo = _currentUserService.GetCurrentUserInfo();
