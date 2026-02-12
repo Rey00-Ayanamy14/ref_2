@@ -28,7 +28,7 @@ public class AuthController : ControllerBase
 
     [HttpGet(ApiConstants.CurrentUserEndpoint)]
     [AllowAnonymous]
-    public IActionResult Debug()
+    public IActionResult GetCurrentUser()
     {
         var userId = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         var login = User.FindFirst(JwtRegisteredClaimNames.UniqueName)?.Value;
