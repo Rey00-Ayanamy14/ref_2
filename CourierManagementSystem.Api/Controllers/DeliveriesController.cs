@@ -1,5 +1,4 @@
 using CourierManagementSystem.Api.Constants;
-using CourierManagementSystem.Api.Models.Entities;
 using CourierManagementSystem.Api.Models.DTOs.Requests;
 using CourierManagementSystem.Api.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -28,15 +27,13 @@ public class DeliveriesController : ControllerBase
 
     [HttpGet]
     [Authorize(Policy = ApiConstants.ManagerOrAdminPolicy)]
-    public async Task<IActionResult> GetAllDeliveries(
-        [FromQuery] DateOnly? date,
-        [FromQuery] long? courierId,
-        [FromQuery] DeliveryStatus? status)
+    public async Task<IActionResult> GetDeliveries([FromQuery] DeliveryFilter filter)
     {
-        _logger.LogInformation("Getting deliveries with filters - Date: {Date}, CourierId: {CourierId}, Status: {Status}", 
-            date, courierId, status);
+        _logger.LogInformation(
+            "Getting deliveries with filter: {@Filter}", 
+            filter);
         
-        var deliveries = await _deliveryService.GetAllDeliveriesAsync(date, courierId, status);
+        var deliveries = await _deliveryService.GetDeliveriesAsync(filter);
         return Ok(deliveries);
     }
 
