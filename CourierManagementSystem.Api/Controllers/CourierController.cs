@@ -1,50 +1,45 @@
-using CourierManagementSystem.Api.Models.Entities;
+using CourierManagementSystem.Api.Constants;
+using CourierManagementSystem.Api.Models.DTOs.Requests;
+using CourierManagementSystem.Api.Models.DTOs.Responses;
 using CourierManagementSystem.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.IdentityModel.Tokens.Jwt;
 
 namespace CourierManagementSystem.Api.Controllers;
 
 [ApiController]
-[Route("courier")]
-[Authorize(Roles = "courier")]
-public class CourierController : ControllerBase
+[Route(ApiConstants.AuthRoutePrefix)]
+public class AuthController : ControllerBase
 {
-    private readonly ICourierService _courierService;
+    private readonly IAuthService _authService;
+    private readonly ICurrentUserService _currentUserService;
 
-    public CourierController(ICourierService courierService)
+    public AuthController(
+        IAuthService authService,
+        ICurrentUserService currentUserService)
     {
-        _courierService = courierService;
+        _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+        _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
     }
 
-    [HttpGet("deliveries")]
-    public async Task<IActionResult> GetDeliveries(
-        [FromQuery] DateOnly? date,
-        [FromQuery] DeliveryStatus? status,
-        [FromQuery] DateOnly? dateFrom,
-        [FromQuery] DateOnly? dateTo)
+    [HttpPost(ApiConstants.LoginEndpoint)]
+    [AllowAnonymous]
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        if (userIdClaim == null || !long.TryParse(userIdClaim, out var courierId))
+        if (request == null)
         {
-            return Unauthorized();
+            return BadRequest("Request cannot be null");
         }
 
-        var deliveries = await _courierService.GetCourierDeliveriesAsync(courierId, date, status, dateFrom, dateTo);
-        return Ok(deliveries);
+        var response = await _authService.LoginAsync(request);
+        return Ok(response);
     }
 
-    [HttpGet("deliveries/{id}")]
-    public async Task<IActionResult> GetDeliveryById(long id)
+    [HttpGet(ApiConstants.CurrentUserEndpoint)]
+    [Authorize] 
+    public IActionResult GetCurrentUser()
     {
-        var userIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        if (userIdClaim == null || !long.TryParse(userIdClaim, out var courierId))
-        {
-            return Unauthorized();
-        }
-
-        var delivery = await _courierService.GetCourierDeliveryByIdAsync(courierId, id);
-        return Ok(delivery);
+        var userInfo = _currentUserService.GetCurrentUserInfo();
+        return Ok(userInfo);
     }
 }
