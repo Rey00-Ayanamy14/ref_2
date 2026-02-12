@@ -1,3 +1,4 @@
+using CourierManagementSystem.Api.Constants;
 using CourierManagementSystem.Api.Models.DTOs.Requests;
 using CourierManagementSystem.Api.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -7,7 +8,7 @@ using System.IdentityModel.Tokens.Jwt;
 namespace CourierManagementSystem.Api.Controllers;
 
 [ApiController]
-[Route("auth")]
+[Route(ApiConstants.AuthRoutePrefix)]
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
@@ -17,7 +18,7 @@ public class AuthController : ControllerBase
         _authService = authService;
     }
 
-    [HttpPost("login")]
+    [HttpPost(ApiConstants.LoginEndpoint)]
     [AllowAnonymous]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
@@ -25,7 +26,7 @@ public class AuthController : ControllerBase
         return Ok(response);
     }
 
-    [HttpGet("debug")]
+    [HttpGet(ApiConstants.CurrentUserEndpoint)]
     [AllowAnonymous]
     public IActionResult Debug()
     {
